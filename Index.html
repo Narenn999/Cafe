@@ -261,6 +261,11 @@
                 
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex space-x-6 lg:space-x-8 items-center">
+                    <!-- NEW INSTALL BUTTON -->
+                    <button id="desktopInstallBtn" onclick="installPWA()" class="hidden text-gold hover:text-white transition-colors font-bold text-sm tracking-widest uppercase items-center gap-1 hover:scale-105 border border-gold/30 px-3 py-1.5 rounded-lg bg-gold/10">
+                        <i class="fas fa-download"></i> <span data-en="Install App" data-hi="ऐप इंस्टॉल करें">Install App</span>
+                    </button>
+
                     <a href="#home" class="text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-widest uppercase" data-en="Home" data-hi="होम">Home</a>
                     <a href="#menu" class="text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-widest uppercase" data-en="Menu" data-hi="मेन्यू">Menu</a>
                     <a href="#offers" class="text-accent hover:text-red-400 transition-colors font-bold text-sm tracking-widest uppercase flex items-center gap-1 hover:scale-105">
@@ -296,6 +301,11 @@
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden md:hidden bg-dark-900/95 backdrop-blur-2xl border-b border-white/10 absolute w-full left-0 top-20 shadow-2xl origin-top transition-all">
             <div class="px-5 pt-4 pb-8 space-y-3">
+                <!-- NEW INSTALL BUTTON FOR MOBILE -->
+                <button id="mobileInstallBtn" onclick="installPWA()" class="hidden w-full px-5 py-3.5 text-lg font-bold text-gold hover:bg-white/5 rounded-xl border border-gold/30 transition-colors items-center gap-3 bg-gold/5 mb-4">
+                    <i class="fas fa-download w-6"></i> <span data-en="Install App" data-hi="ऐप इंस्टॉल करें">Install App</span>
+                </button>
+
                 <a href="#home" class="block px-5 py-3.5 text-lg font-medium text-cream hover:bg-white/5 rounded-xl border border-transparent hover:border-white/10 transition-colors">
                     <i class="fas fa-home w-6 text-gray-400"></i> <span data-en="Home" data-hi="होम">Home</span>
                 </a>
@@ -1132,7 +1142,39 @@
 
     <!-- JavaScript for Interactions & Shopping Cart -->
     <script>
-        // --- PWA Service Worker Registration ---
+        // --- PWA Service Worker Registration & Install Logic ---
+        let deferredPrompt;
+
+        // Listen for the event that tells us the PWA can be installed
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent the mini-infobar from appearing automatically on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered when the user clicks the button
+            deferredPrompt = e;
+            // Un-hide the install buttons in our UI
+            const deskBtn = document.getElementById('desktopInstallBtn');
+            const mobBtn = document.getElementById('mobileInstallBtn');
+            if(deskBtn) deskBtn.style.display = 'flex';
+            if(mobBtn) { mobBtn.classList.remove('hidden'); mobBtn.classList.add('flex'); }
+        });
+
+        // Function triggered when the user clicks our Install buttons
+        function installPWA() {
+            if (!deferredPrompt) return;
+            // Show the install prompt to the user
+            deferredPrompt.prompt();
+            // Wait for the user to respond
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the PWA prompt');
+                    // Hide the buttons once installed
+                    document.getElementById('desktopInstallBtn').style.display = 'none';
+                    document.getElementById('mobileInstallBtn').style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
+        }
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
